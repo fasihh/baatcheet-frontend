@@ -80,10 +80,7 @@ export async function register(_state: FormState<UserSchema>, formData: FormData
     };
   }
 
-  const resData = await res.json();
-
-  await createSession(resData.token);
-  redirect('/');
+  redirect('/login');
 }
 
 export async function logout() {

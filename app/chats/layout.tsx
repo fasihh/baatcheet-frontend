@@ -44,8 +44,8 @@ export default function ChatLayout({
                   <Button
                     variant="ghost"
                     className={cn(
-                      "flex justify-start w-full hover:bg-sidebar-accent",
-                      item.path === pathname && "bg-muted"
+                      "flex justify-start w-full hover:bg-muted",
+                      item.path === pathname && "bg-muted hover:bg-muted dark:hover:bg-muted"
                     )}
                   >
                     <item.icon />

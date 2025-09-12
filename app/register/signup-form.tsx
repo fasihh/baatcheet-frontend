@@ -66,7 +66,7 @@ export function SignupForm({
                   defaultValue={state?.values?.password}
                   required
                 />
-                <span className="text-sm text-destructive">{state?.errors?.username}</span>
+                <span className="text-sm text-destructive">{state?.errors?.password}</span>
               </div>
               <span className="text-center text-sm text-destructive">{state?.errors?._form}</span>
               <div className="flex flex-col gap-3">
