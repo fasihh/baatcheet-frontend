@@ -5,6 +5,7 @@ import HomePage from './pages/home';
 import LoginPage from './pages/login';
 import RouteProtection from './layouts/route-protection';
 import ChatPage from './pages/chat-room';
+import FriendRequestPage from './pages/friend_request';
 
 const NotFound = () => (
     <Empty>
@@ -31,6 +32,7 @@ function App() {
           }
         >
           <Route path="/chats" element={<HomePage />} />
+          <Route path="/friend-requests" element={<FriendRequestPage />} />
           <Route path="/chats/:chatId" element={<ChatPage />} />
         </Route>
         <Route path="/" element={<Navigate to="/chats" replace />} />
