@@ -6,6 +6,7 @@ import { useUser } from "./user";
 interface IMessage {
   senderId: string;
   content: string;
+  chatId?: string;
 }
 
 interface SocketProviderProps {
@@ -13,7 +14,7 @@ interface SocketProviderProps {
 }
 
 interface ISocketContext {
-  sendMessage: (chatId: string, message: string) => any;
+  sendMessage: (chatId: string, message: string, guildId?: string) => any;
   messages: IMessage[];
 }
 
@@ -27,41 +28,55 @@ export const useSocket = () => {
 }
 
 export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
-  const [socket, setSocket] = useState<Socket>();
+  const [_socket_holder, setSocket] = useState<Socket>();
   const [messages, setMessages] = useState<IMessage[]>([]);
   const { getTokenPayload } = useUser();
 
-  const sendMessage: ISocketContext['sendMessage'] = useCallback((chatId, message) => {
+  const sendMessage: ISocketContext['sendMessage'] = useCallback(
+  async (chatId: string, message: string, guildId?: string) => {
     console.log("Send Message", message);
-    if (socket) {
-      socket.emit("event:message", {
-        chatId,
-        message,
-        senderId: getTokenPayload().userId
-      });
-    }
-  }, [socket]);
 
-  const onMessageRec = useCallback((msg: string) => {
-    console.log("From Server Msg Rec", msg);
-    const { message, senderId } = JSON.parse(msg) as { message: string; senderId: string };
-    setMessages(prev => [...prev, { content: message, senderId }]);
+    const { userId, token } = getTokenPayload();
+
+    const url = guildId
+      ? `${import.meta.env.VITE_SOCKET_URL}/api/messages?guildId=${guildId}`
+      : `${import.meta.env.VITE_SOCKET_URL}/api/messages`;
+
+    await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        chatId,      
+        senderId: userId,
+        message
+      })
+    });
+  },[]);
+
+  const onMessageReceived = useCallback((data: string) => {
+    const parsed = JSON.parse(data);
+    setMessages((prev) => [
+      ...prev,
+      { senderId: parsed.senderId, content: parsed.message, chatId: parsed.chatId }
+    ]);
   }, []);
 
   useEffect(() => {
-    const _socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:8000', {
-      transports: ['websocket'],
-      autoConnect: true,
+    const _socket = io(import.meta.env.VITE_SOCKET_URL, {
+      transports: ["websocket"],
+      withCredentials: false
     });
-    _socket.on('message', onMessageRec);
 
+    _socket.on("message", onMessageReceived);
     setSocket(_socket);
 
     return () => {
-      _socket.off("message", onMessageRec);
+      _socket.off("message", onMessageReceived);
       _socket.disconnect();
-      setSocket(undefined);
-    }
+    };
   }, []);
 
   return (

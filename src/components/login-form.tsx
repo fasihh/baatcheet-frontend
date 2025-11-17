@@ -39,7 +39,7 @@ export function LoginForm({
     onSuccess: (data: any) => {
       console.log(data);
       login(data.token);
-      navigate('/chats');
+      navigate('/friend-requests');
     },
     onError: (error: Error) => {
       console.error("Login failed:", error.message);
