@@ -1,8 +1,20 @@
 import React, { useState, useEffect, useRef, type JSX } from 'react';
 import { useUser } from '@/contexts/user';
 import { useMutation } from '@tanstack/react-query';
-import { sendFriendRequestMutation } from '@/queries/friend_requests';
+import { sendFriendRequestMutation } from '@/queries/friend-requests';
 import { findUserByName } from '@/queries/user';
+import { Button } from './ui/button';
+import { Label } from './ui/label';
+import { Input } from './ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog';
 
 type FormState = {
   username: string;
@@ -64,90 +76,55 @@ export function AddFriend(): JSX.Element {
     (sendRequest.isError ? ((sendRequest.error as any)?.message ?? 'Failed to send request') : null);
 
   return (
-    <>
-      {/* Button-like trigger so it looks like a proper button in the header */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen(true);
-        }}
-        className="inline-flex items-center gap-2 px-3 py-1 rounded border bg-transparent hover:bg-muted text-sm"
-        aria-haspopup="dialog"
-      >
-        + Add Friend
-      </button>
-
-      {open && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onMouseDown={() => setOpen(false)}
-        >
-          <div
-            className="w-full max-w-md bg-background rounded shadow-lg p-4 ring-1 ring-border"
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-medium">Add Friend</h3>
-              <button
-                aria-label="Close"
-                onClick={() => setOpen(false)}
-                className="text-sm px-2 py-1 rounded hover:bg-muted"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <label htmlFor="af-username" className="block text-sm font-medium">Username</label>
-              <input
-                ref={inputRef}
-                id="af-username"
-                name="username"
-                value={formState.username}
-                onChange={handleChange}
-                placeholder="Enter username"
-                required
-                className="w-full rounded px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-primary"
-                aria-invalid={!!visibleError}
-                aria-describedby={visibleError ? 'af-error' : undefined}
-              />
-
-              {visibleError && (
-                <div id="af-error" role="alert" className="text-sm text-destructive bg-destructive/10 border border-destructive rounded px-3 py-2">
-                  {visibleError}
-                </div>
-              )}
-
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-sm text-muted-foreground">
-                  {/* show loading state if either fetch or send mutation is running */}
-                  {(findUser.isPending || sendRequest.isPending) ? 'Processing…' : 'Enter username to send a friend request.'}
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    disabled={sendRequest.isPending || findUser.isPending}
-                    className="px-3 py-1 rounded border bg-primary text-white disabled:opacity-50"
-                  >
-                    {sendRequest.isPending ? 'Sending...' : 'Send Request'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOpen(false)}
-                    className="px-3 py-1 rounded border bg-transparent"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </form>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm">
+          + Add Friend
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add Friend</DialogTitle>
+          <DialogDescription>
+            Enter username to send a friend request.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="af-username">Username</Label>
+            <Input
+              ref={inputRef}
+              id="af-username"
+              name="username"
+              value={formState.username}
+              onChange={handleChange}
+              placeholder="Enter username"
+              required
+              aria-invalid={!!visibleError}
+              aria-describedby={visibleError ? 'af-error' : undefined}
+            />
           </div>
-        </div>
-      )}
-    </>
+
+          {visibleError && (
+            <div id="af-error" role="alert" className="text-sm text-destructive bg-destructive/10 border border-destructive rounded px-3 py-2">
+              {visibleError}
+            </div>
+          )}
+
+          {(findUser.isPending || sendRequest.isPending) && (
+            <div className="text-sm text-muted-foreground">Processing…</div>
+          )}
+
+          <DialogFooter>
+            <Button
+              type="submit"
+              disabled={sendRequest.isPending || findUser.isPending}
+            >
+              {sendRequest.isPending ? 'Sending...' : 'Send Request'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
