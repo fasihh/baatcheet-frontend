@@ -1,25 +1,24 @@
-import React, { useEffect, useRef } from 'react';
+import React, { Suspense, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SocketProvider, useSocket } from '@/contexts/socket';
 import { useUser } from '@/contexts/user';
-import { useQuery } from '@tanstack/react-query';
-import { getMessagesByChatIdQuery } from '@/queries/chats';
-import { Skeleton } from '@/components/ui/skeleton';
+import { getChatByIdQuery, getMessagesByChatIdQuery } from '@/queries/chats';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
-const ChatRoom: React.FC<{ chatId: string }> = ({ chatId }) => {
+const ChatRoom: React.FC<{ chatId: string, guildId?: string }> = ({ chatId, guildId }) => {
   const [text, setText] = React.useState('');
-  const { messages, sendMessage } = useSocket();
-  const { token, getTokenPayload } = useUser();
-  const { data, isLoading } = useQuery(getMessagesByChatIdQuery(token!, chatId));
-  const user = getTokenPayload();
+  const { getMessagesForChat, sendMessage, joinChat, leaveChat, clearMessagesForChat } = useSocket();
+  const { token } = useUser();
+  const { data: messagesData } = useSuspenseQuery(getMessagesByChatIdQuery(token!, chatId));
+  const { data: chatData } = useSuspenseQuery(getChatByIdQuery(token!, chatId));
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && text.trim()) {
-      sendMessage(chatId, text);
+      sendMessage(chatId, text, guildId);
       setText('');
       scrollToBottom();
     }
@@ -31,42 +30,77 @@ const ChatRoom: React.FC<{ chatId: string }> = ({ chatId }) => {
     }
   };
 
-  const prevMessages = data?.messages || [];
+  const prevMessages = messagesData.messages || [];
+  const socketMessages = getMessagesForChat(chatId);
+
+  useEffect(() => {
+    if (chatId) {
+      joinChat(chatId);
+    }
+
+    return () => {
+      if (chatId) {
+        leaveChat(chatId);
+      }
+    };
+  }, [chatId, joinChat, leaveChat]);
+
+  useEffect(() => {
+    clearMessagesForChat(chatId);
+  }, [messagesData, chatId, clearMessagesForChat]);
 
   useEffect(() => {
     scrollToBottom();
-  }, [prevMessages, messages]);
+  }, [prevMessages, socketMessages]);
+
+  const formatTimestamp = (timestamp: string | number) => {
+    const date = new Date(timestamp);
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+
+    if (isToday) {
+      return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    }
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
 
   return (
     <div className="flex flex-col h-full">
+      <div className="p-4 border-b flex items-center gap-2">
+        {!!chatData.chat.name && <><h2 className="font-semibold">#{chatData.chat.name}</h2> <span className="text-muted-foreground">•</span></>}
+        {chatData.chat.createdAt && <p className="text-xs text-muted-foreground">Created on {new Date(chatData.chat.createdAt).toLocaleString()}</p>}
+      </div>
       {/* Scrollable Area */}
       <ScrollArea className="flex-1 overflow-y-auto p-4">
-        <div className="space-y-1">
-          {/* Skeleton Loading */}
-          {isLoading && (
-            Array.from({ length: 20 }).map((_, index) => (
-              <div key={index} className="text-left">
-                <Skeleton className="inline-block w-1/2 h-6 rounded-lg" />
-              </div>
-            ))
-          )}
-
-          {/* Messages */}
-          {[...prevMessages, ...messages].map(({ content, senderId }: Record<string, any>, index: number) => (
+        <div className="space-y-4">
+          {[...prevMessages, ...socketMessages].map((msg: Record<string, any>, index: number) => (
             <div
               key={index}
-              className={`${
-                senderId === user.userId ? 'text-right' : 'text-left'
-              }`}
+              className="flex gap-3 hover:bg-muted/50 -mx-4 px-4 py-1 group"
             >
-              <div
-                className={`inline-block p-2 rounded-lg ${
-                  senderId === user.userId
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200'
-                }`}
-              >
-                {content}
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold">
+                  {msg.senderName?.[0]?.toUpperCase() || msg.senderUsername?.[0]?.toUpperCase() || 'U'}
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2">
+                  <span className="font-semibold text-sm">
+                    {msg.senderName || msg.senderUsername || 'Unknown User'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {msg.createdAt ? formatTimestamp(msg.createdAt) : 'Just now'}
+                  </span>
+                </div>
+                <div className="text-sm mt-0.5 break-words">
+                  {msg.content}
+                </div>
               </div>
             </div>
           ))}
@@ -86,7 +120,7 @@ const ChatRoom: React.FC<{ chatId: string }> = ({ chatId }) => {
         <Button
           onClick={() => {
             if (text.trim()) {
-              sendMessage(chatId, text);
+              sendMessage(chatId, text, guildId);
               setText('');
               scrollToBottom();
             }
@@ -100,12 +134,14 @@ const ChatRoom: React.FC<{ chatId: string }> = ({ chatId }) => {
 };
 
 function ChatPage() {
-  const { chatId } = useParams();
+  const { chatId, guildId } = useParams();
 
   return (
     <SocketProvider>
       <div className="flex flex-col h-full">
-        <ChatRoom chatId={chatId!} />
+        <Suspense fallback={<div>Loading...</div>}>
+          <ChatRoom chatId={chatId!} guildId={guildId} />
+        </Suspense>
       </div>
     </SocketProvider>
   );
