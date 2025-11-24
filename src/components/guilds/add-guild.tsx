@@ -2,9 +2,9 @@ import React, { useEffect, useRef, useState, type JSX } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@/contexts/user";
 import { createGuildMutation } from "@/queries/guilds";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "./ui/dialog";
+} from "@/components/ui/dialog";
 
 export function AddGuild(): JSX.Element {
   const { token } = useUser();
@@ -25,15 +25,15 @@ export function AddGuild(): JSX.Element {
 
   const createGuild = useMutation({
     ...createGuildMutation(token!),
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ["guilds"], refetchType: "active" });
-        setOpen(false);
-        setName("");
-        setError(null);
-      },
-      onError: (err: any) => {
-        setError(err?.message ?? "Failed to create guild");
-      },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["guilds"], refetchType: "active" });
+      setOpen(false);
+      setName("");
+      setError(null);
+    },
+    onError: (err: any) => {
+      setError(err?.message ?? "Failed to create guild");
+    },
   });
 
   useEffect(() => {
