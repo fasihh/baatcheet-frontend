@@ -3,14 +3,18 @@ import { Button } from '@/components/ui/button';
 import type React from 'react';
 import { useUser } from '@/contexts/user';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
-import { getIncomingRequestsQuery } from '@/queries/friend_requests';
+import { getIncomingRequestsQuery } from '@/queries/friend-requests';
 import { AddFriend } from '@/components/add-friend';
-import { acceptFriendRequestMutation, removeFriendMutation, rejectFriendRequestMutation } from '@/queries/friend_requests';
+import { acceptFriendRequestMutation, removeFriendMutation, rejectFriendRequestMutation } from '@/queries/friend-requests';
 import queryClient from '@/queries/cllient';
 import { getFriends } from '@/queries/user';
+import { RefreshCcw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Item } from '@/components/ui/item';
 
 const Requests: React.FC = () => {
   const { token } = useUser();
+  const navigate = useNavigate();
   const { data: incomingData } = useSuspenseQuery({
     ...getIncomingRequestsQuery(token!),
   })
@@ -34,6 +38,12 @@ const Requests: React.FC = () => {
       // 2. Background refresh (no visible loading)
       queryClient.invalidateQueries({
         queryKey: ['friendRequests', 'incoming'],
+        refetchType: 'active',
+      });
+      
+      // 3. Invalidate friends list to show the new friend
+      queryClient.invalidateQueries({
+        queryKey: ['friends'],
         refetchType: 'active',
       });
     },
@@ -88,8 +98,19 @@ const Requests: React.FC = () => {
     }
   });
 
+  const handleRefetch = () => {
+    queryClient.invalidateQueries({
+      queryKey: ['friendRequests'],
+      refetchType: 'active',
+    });
+    queryClient.invalidateQueries({
+      queryKey: ['friends'],
+      refetchType: 'active',
+    });
+  };
+
   return (
-    <Tabs defaultValue="incoming" className="w-full">
+    <Tabs defaultValue="incoming" className="w-full p-4">
       <div className="flex items-center justify-between w-full gap-4">
         <TabsList className="!w-auto">
           <TabsTrigger value="incoming">Incoming</TabsTrigger>
@@ -98,6 +119,9 @@ const Requests: React.FC = () => {
 
         {/* Add a pressable AddFriend button beside the tabs */}
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleRefetch}>
+            <RefreshCcw />
+          </Button>
           <AddFriend />
         </div>
       </div>
@@ -108,9 +132,10 @@ const Requests: React.FC = () => {
           {incomingData?.requests && incomingData.requests.length > 0 ? (
             <ul className="space-y-2">
               {incomingData.requests.map((req: any) => (
-                <li
+                <Item
                   key={req.userId}
-                  className="flex items-center justify-between p-2 border rounded"
+                  variant="outline"
+                  className="flex items-center justify-between"
                 >
                   <div>
                     <div className="font-medium">{req.username}</div>
@@ -133,7 +158,7 @@ const Requests: React.FC = () => {
                       {rejectFriendMutation.isPending ? "Declining..." : "Decline"}  
                     </Button>
                   </div>
-                </li>
+                </Item>
               ))}
             </ul>
           ) : (
@@ -148,9 +173,10 @@ const Requests: React.FC = () => {
           {friendsData?.friends && friendsData.friends.length > 0 ? (
             <ul className="space-y-2">
               {friendsData.friends.map((f: any) => (
-                <li
+                <Item
                   key={f.userId}
-                  className="flex items-center justify-between p-2 border rounded"
+                  variant="outline"
+                  className="flex items-center justify-between"
                 >
                   <div>
                     <div className="font-medium">
@@ -161,7 +187,14 @@ const Requests: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm">Message</Button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        navigate(`/chats/${f.chatId}`);
+                      }}
+                    >
+                        Message
+                    </Button>
                     <Button 
                       size="sm" 
                       variant="ghost"
@@ -170,7 +203,7 @@ const Requests: React.FC = () => {
                       Remove
                     </Button>
                   </div>
-                </li>
+                </Item>
               ))}
             </ul>
           ) : (
