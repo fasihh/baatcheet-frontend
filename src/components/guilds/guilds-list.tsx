@@ -1,10 +1,10 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useUser } from '@/contexts/user';
 import { getGuilds } from '@/queries/guilds';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import AddGuild from '@/components/add-guild';
+import AddGuild from '@/components/guilds/add-guild';
+import { Home } from 'lucide-react';
 
 export const GuildsList = () => {
   const navigate = useNavigate();
@@ -12,6 +12,8 @@ export const GuildsList = () => {
   const { data } = useSuspenseQuery({
     ...getGuilds(token!)
   });
+
+  const { guildId } = useParams();
 
   const guilds: Array<any> = data ?? [];
 
@@ -22,25 +24,24 @@ export const GuildsList = () => {
         variant={location.pathname === '/me' ? 'default' : 'outline'}
         onClick={() => location.pathname !== '/me' && navigate('/me')}
       >
-        B
+        <Home />
       </Button>
 
       <div className="flex-1 w-full overflow-y-auto flex flex-col items-center gap-3 px-1">
         {guilds.length > 0 ? (
           guilds.map((g) => {
             const letter = (g.guildName && g.guildName[0]) ? String(g.guildName[0]).toUpperCase() : '?';
+            const isSelectedGuild = guildId === g.guildId;
             return (
               <Button
                 key={g.guildId}
                 onClick={() => navigate(`/guilds/${g.guildId}`)}
-                variant="outline"
+                variant={isSelectedGuild ? "default" : "outline"}
                 size="icon-lg"
                 title={g.guildName}
                 aria-label={`Open ${g.guildName}`}
               >
-                <Avatar>
-                  <AvatarFallback>{letter}</AvatarFallback>
-                </Avatar>
+                {letter}
               </Button>
             );
           })
