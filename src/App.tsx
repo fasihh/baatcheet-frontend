@@ -1,11 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import ChatLayout from './layouts/chats';
-import HomePage from './pages/home';
 import LoginPage from './pages/login';
 import RouteProtection from './layouts/route-protection';
 import ChatPage from './pages/chat-room';
-import FriendRequestPage from './pages/friend_request';
+import FriendRequestPage from './pages/me';
+import GuildPage from './pages/guild';
 
 const NotFound = () => (
     <Empty>
@@ -24,6 +24,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<LoginPage isRegister />} />
         <Route
           element={
             <RouteProtection>
@@ -31,11 +32,13 @@ function App() {
             </RouteProtection>
           }
         >
-          <Route path="/chats" element={<HomePage />} />
-          <Route path="/friend-requests" element={<FriendRequestPage />} />
+          <Route path="/me" element={<FriendRequestPage />} />
           <Route path="/chats/:chatId" element={<ChatPage />} />
+          <Route path="/guilds/:guildId" element={<GuildPage />}>
+            <Route path="chats/:chatId" element={<ChatPage />} />
+          </Route>
         </Route>
-        <Route path="/" element={<Navigate to="/chats" replace />} />
+        <Route path="/" element={<Navigate to="/me" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
