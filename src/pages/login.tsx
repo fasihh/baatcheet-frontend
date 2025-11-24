@@ -1,10 +1,10 @@
 import { LoginForm } from "@/components/login-form";
 
-function LoginPage() {
+function LoginPage({ isRegister = false }: { isRegister?: boolean }) {
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
-        <LoginForm />
+        <LoginForm isRegister={isRegister} />
       </div>
     </div>
   )

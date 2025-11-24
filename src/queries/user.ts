@@ -31,22 +31,27 @@ export const getFriends = (token: string) => ({
 } as UseSuspenseQueryOptions<any, Error>);
 
 
-const loginMutation = {
-  mutationFn: async ({ username, password }: { username: string; password: string }) => {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/users/login`, {
+const loginMutation = (isRegister: boolean) => ({
+  mutationFn: async ({ username, password, displayName }: { username: string; password: string, displayName?: string }) => {
+    const url = isRegister 
+      ? `${import.meta.env.VITE_API_URL}/users`
+      : `${import.meta.env.VITE_API_URL}/users/login`;
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, name: displayName, password }),
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      throw new Error('Failed to login');
+      throw new Error(data.error.info || (isRegister ? 'Failed to register' : 'Failed to login'));
     }
 
-    return response.json();
+    return data;
   },
-} as UseMutationOptions<any, Error, { username: string; password: string }>;
+} as UseMutationOptions<any, Error, { username: string; displayName: string; password: string }>);
 
 export default loginMutation;
