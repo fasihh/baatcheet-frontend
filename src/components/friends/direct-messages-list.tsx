@@ -2,9 +2,9 @@ import { useUser } from "@/contexts/user";
 import { getDirectMessagesQuery } from "@/queries/chats";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
-import { Item } from "../ui/item";
+import { Item } from "@/components/ui/item";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "../ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export const DirectMessagesList = () => {
   const { token } = useUser();
