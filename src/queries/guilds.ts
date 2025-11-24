@@ -35,3 +35,22 @@ export const getGuildMembersQuery = (token: string, guildId: string) => ({
     return fetcher("GET", `${import.meta.env.VITE_API_URL}/guilds/${guildId}/members`, token);
   },
 } as UseSuspenseQueryOptions<any, Error>);
+
+export const joinGuildMutation = (token: string) => ({
+  mutationFn: async ({ guildId }: { guildId: string }) => {
+    return fetcher("POST", `${import.meta.env.VITE_API_URL}/guilds/${guildId}/join`, token);
+  },
+} as UseMutationOptions<any, Error, { guildId: string }>);
+
+export const getGuildPermissionsQuery = (token: string, guildId: string) => ({
+  queryKey: ['guilds', guildId, 'permissions'],
+  queryFn: async () => {
+    return fetcher("GET", `${import.meta.env.VITE_API_URL}/guilds/${guildId}/permissions`, token);
+  },
+} as UseSuspenseQueryOptions<any, Error>);
+
+export const removeUserFromGuildMutation = (token: string) => ({
+  mutationFn: async ({ guildId, userId }: { guildId: string, userId: string }) => {
+    return fetcher("DELETE", `${import.meta.env.VITE_API_URL}/guilds/${guildId}/members/${userId}`, token);
+  },
+} as UseMutationOptions<any, Error, { guildId: string, userId: string }>);
