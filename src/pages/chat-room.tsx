@@ -41,7 +41,7 @@ const ChatRoom: React.FC<{ chatId: string }> = ({ chatId }) => {
     <div className="flex flex-col h-full">
       {/* Scrollable Area */}
       <ScrollArea className="flex-1 overflow-y-auto p-4">
-        <div className="space-y-4">
+        <div className="space-y-1">
           {/* Skeleton Loading */}
           {isLoading && (
             Array.from({ length: 20 }).map((_, index) => (
