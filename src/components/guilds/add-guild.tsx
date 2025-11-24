@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, type JSX } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@/contexts/user";
-import { createGuildMutation } from "@/queries/guilds";
+import { createGuildMutation, joinGuildMutation } from "@/queries/guilds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,7 @@ import {
 export function AddGuild(): JSX.Element {
   const { token } = useUser();
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<'create' | 'join'>('create');
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -28,18 +29,37 @@ export function AddGuild(): JSX.Element {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["guilds"], refetchType: "active" });
       setOpen(false);
-      setName("");
-      setError(null);
+      resetForm();
     },
     onError: (err: any) => {
       setError(err?.message ?? "Failed to create guild");
     },
   });
 
+  const joinGuild = useMutation({
+    ...joinGuildMutation(token!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["guilds"], refetchType: "active" });
+      setOpen(false);
+      resetForm();
+    },
+    onError: (err: any) => {
+      setError(err?.message ?? "Failed to join guild");
+    },
+  });
+
+  const resetForm = () => {
+    setName("");
+    setError(null);
+    setMode('create');
+  };
+
   useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 0);
       setError(null);
+    } else {
+      resetForm();
     }
   }, [open]);
 
@@ -47,19 +67,33 @@ export function AddGuild(): JSX.Element {
     e?.preventDefault();
     setError(null);
     if (!name.trim()) {
-      setError("Guild name is required");
+      setError(mode === 'create' ? "Guild name is required" : "Server ID is required");
       return;
     }
-    createGuild.mutate({ guildName: name.trim() });
+
+    if (mode === 'create') {
+      createGuild.mutate({ guildName: name.trim() });
+    } else {
+      joinGuild.mutate({ guildId: name.trim() });
+    }
   };
+
+  const toggleMode = () => {
+    setMode(prev => prev === 'create' ? 'join' : 'create');
+    setError(null);
+    setName("");
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const isPending = createGuild.isPending || joinGuild.isPending;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button
           type="button"
-          title="Create Server"
-          aria-label="Create Server"
+          title="Add Server"
+          aria-label="Add Server"
           className="w-11 h-11 rounded-xl flex items-center justify-center border hover:bg-muted transition text-sm"
         >
           +
@@ -67,37 +101,52 @@ export function AddGuild(): JSX.Element {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create Server</DialogTitle>
+          <DialogTitle>{mode === 'create' ? "Create Server" : "Join Server"}</DialogTitle>
           <DialogDescription>
-            Enter a name for your new server.
+            {mode === 'create'
+              ? "Enter a name for your new server."
+              : "Enter an invite ID to join an existing server."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="guild-name">Server name</Label>
+            <Label htmlFor="guild-input">
+              {mode === 'create' ? "Server name" : "Server ID"}
+            </Label>
             <Input
-              id="guild-name"
+              id="guild-input"
               ref={inputRef}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter server name"
+              placeholder={mode === 'create' ? "Enter server name" : "Enter server ID"}
               aria-invalid={!!error}
-              aria-describedby={error ? "create-guild-error" : undefined}
+              aria-describedby={error ? "guild-error" : undefined}
             />
           </div>
 
           {error && (
-            <div id="create-guild-error" role="alert" className="text-sm text-destructive bg-destructive/10 border border-destructive rounded px-3 py-2">
+            <div id="guild-error" role="alert" className="text-sm text-destructive bg-destructive/10 border border-destructive rounded px-3 py-2">
               {error}
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:justify-between sm:flex-row gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={toggleMode}
+              className="w-full sm:w-auto"
+            >
+              {mode === 'create' ? "Join a Server" : "Create a Server"}
+            </Button>
             <Button
               type="submit"
-              disabled={createGuild.isPending}
+              disabled={isPending}
+              className="w-full sm:w-auto"
             >
-              {createGuild.isPending ? "Creating..." : "Create"}
+              {isPending
+                ? (mode === 'create' ? "Creating..." : "Joining...")
+                : (mode === 'create' ? "Create" : "Join")}
             </Button>
           </DialogFooter>
         </form>
