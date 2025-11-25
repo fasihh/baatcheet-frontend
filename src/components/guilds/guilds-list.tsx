@@ -5,6 +5,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import AddGuild from '@/components/guilds/add-guild';
 import { Home } from 'lucide-react';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 export const GuildsList = () => {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export const GuildsList = () => {
 
   const { guildId } = useParams();
 
-  const guilds: Array<any> = data ?? [];
+  const guilds: Array<any> = data.guilds ?? [];
 
   return (
     <div className="w-16 flex flex-col items-center gap-3 py-3 bg-muted/5 border-r">
@@ -33,16 +34,21 @@ export const GuildsList = () => {
             const letter = (g.guildName && g.guildName[0]) ? String(g.guildName[0]).toUpperCase() : '?';
             const isSelectedGuild = guildId === g.guildId;
             return (
-              <Button
-                key={g.guildId}
-                onClick={() => navigate(`/guilds/${g.guildId}`)}
-                variant={isSelectedGuild ? "default" : "outline"}
-                size="icon-lg"
-                title={g.guildName}
-                aria-label={`Open ${g.guildName}`}
-              >
-                {letter}
-              </Button>
+              <Tooltip key={g.guildId}>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => navigate(`/guilds/${g.guildId}`)}
+                    variant={isSelectedGuild ? "default" : "outline"}
+                    size="icon-lg"
+                    aria-label={`Open ${g.guildName}`}
+                  >
+                    {letter}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  {g.guildName}
+                </TooltipContent>
+              </Tooltip>
             );
           })
         ) : (
