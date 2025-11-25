@@ -8,13 +8,13 @@ import { GuildChatsPanel } from '@/components/guilds/guild-chats-panel';
 import { GuildPermissionWrapper } from '@/components/guilds/guild-permission-wrapper';
 import { UserProfile } from '@/components/user-profile';
 
-function ChatLayout() {
+function RootLayout() {
   const location = useLocation();
   const { guildId } = useParams();
   const isGuildRoute = !!guildId;
 
   const content = (
-    <ErrorBoundary resetKeys={[location.pathname]}>
+    <>
       {/* Middle panel: Friends / DMs or Guild Channels */}
       <Card className="min-w-[16rem] h-full flex flex-col pb-0">
         {isGuildRoute ? <GuildChatsPanel /> : <FriendsChatPanel />}
@@ -28,39 +28,41 @@ function ChatLayout() {
           <Outlet />
         </div>
       </div>
-    </ErrorBoundary >
+    </>
   );
 
   return (
-    <div className="flex h-screen">
-      {/* Server/Guild column (Discord-style) */}
-      <Suspense fallback={
-        <div className="w-16 flex flex-col items-center gap-3 py-3 bg-muted/5 border-r">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-primary text-white text-sm font-semibold">B</div>
-          <div className="flex-1 w-full flex flex-col items-center gap-3 px-1">
-            <div className="w-11 h-11 rounded-xl bg-slate-200 animate-pulse" />
-          </div>
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center border">+</div>
-        </div>
-      }>
-        <GuildsList />
-      </Suspense>
-
-      {guildId ? (
+    <ErrorBoundary resetKeys={[location.pathname]}>
+      <div className="flex h-screen">
+        {/* Server/Guild column (Discord-style) */}
         <Suspense fallback={
-          <div className="flex-1 flex items-center justify-center">
-            Loading guild...
+          <div className="w-16 flex flex-col items-center gap-3 py-3 bg-muted/5 border-r">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-primary text-white text-sm font-semibold">B</div>
+            <div className="flex-1 w-full flex flex-col items-center gap-3 px-1">
+              <div className="w-11 h-11 rounded-xl bg-slate-200 animate-pulse" />
+            </div>
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center border">+</div>
           </div>
         }>
-          <GuildPermissionWrapper guildId={guildId}>
-            {content}
-          </GuildPermissionWrapper>
+          <GuildsList />
         </Suspense>
-      ) : (
-        content
-      )}
-    </div >
+
+        {guildId ? (
+          <Suspense fallback={
+            <div className="flex-1 flex items-center justify-center">
+              Loading guild...
+            </div>
+          }>
+            <GuildPermissionWrapper guildId={guildId}>
+              {content}
+            </GuildPermissionWrapper>
+          </Suspense>
+        ) : (
+          content
+        )}
+      </div >
+    </ErrorBoundary>
   );
 };
 
-export default ChatLayout;
+export default RootLayout;

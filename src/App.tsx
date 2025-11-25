@@ -1,9 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
-import ChatLayout from './layouts/chats';
+import RootLayout from './layouts/root';
 import LoginPage from './pages/login';
 import RouteProtection from './layouts/route-protection';
-import ChatPage from './pages/chat-room';
+import ChatPage from './pages/chat';
 import FriendRequestPage from './pages/me';
 import GuildPage from './pages/guild';
 import { Suspense } from 'react';
@@ -38,7 +38,7 @@ function App() {
         <Route
           element={
             <RouteProtection>
-              <ChatLayout />
+              <RootLayout />
             </RouteProtection>
           }
         >
