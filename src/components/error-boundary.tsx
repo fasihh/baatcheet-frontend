@@ -28,9 +28,9 @@ class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError && this.props.resetKeys) {
       const prevKeys = prevProps.resetKeys || [];
       const currentKeys = this.props.resetKeys;
-      
-      if (prevKeys.length !== currentKeys.length || 
-          prevKeys.some((key, index) => key !== currentKeys[index])) {
+
+      if (prevKeys.length !== currentKeys.length ||
+        prevKeys.some((key, index) => key !== currentKeys[index])) {
         this.setState({ hasError: false, error: null });
       }
     }
@@ -55,15 +55,19 @@ class ErrorBoundary extends Component<Props, State> {
               {this.state.error?.message || 'Something went wrong'}
             </AlertDescription>
           </Alert>
-          <Button
-            className="mt-4"
-            onClick={() => {
-              this.setState({ hasError: false, error: null });
-              location.reload();
-            }}
-          >
-            Try again
-          </Button>
+          <div className="flex gap-2 mt-4">
+            <Button
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                location.reload();
+              }}
+            >
+              Try again
+            </Button>
+            <Button onClick={() => history.back()} variant="outline">
+              Go back
+            </Button>
+          </div>
         </div>
       );
     }
