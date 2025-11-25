@@ -86,12 +86,33 @@ export const GuildChatsList = ({ guildId }: { guildId: string }) => {
 
 	const handleEditSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!editChannelName.trim()) {
+		const trimmedName = editChannelName.trim();
+
+		if (!trimmedName) {
 			setEditError("Channel name is required");
 			return;
 		}
+
+		// Check for spaces
+		if (trimmedName.includes(' ')) {
+			setEditError("Channel name cannot contain spaces");
+			return;
+		}
+
+		// Check for invalid characters (only alphanumeric and hyphens allowed)
+		if (!/^[a-zA-Z0-9-]+$/.test(trimmedName)) {
+			setEditError("Channel name can only contain letters, numbers, and hyphens");
+			return;
+		}
+
+		// Check if hyphen is at start or end
+		if (trimmedName.startsWith('-') || trimmedName.endsWith('-')) {
+			setEditError("Channel name cannot start or end with a hyphen");
+			return;
+		}
+
 		if (editingChatId) {
-			updateChat.mutate({ chatId: editingChatId, chatName: editChannelName.trim() });
+			updateChat.mutate({ chatId: editingChatId, chatName: trimmedName });
 		}
 	};
 
