@@ -32,8 +32,8 @@ function RootLayout() {
   );
 
   return (
-    <ErrorBoundary resetKeys={[location.pathname]}>
-      <div className="flex h-screen">
+    <div className="flex h-screen">
+      <ErrorBoundary resetKeys={[location.pathname]}>
         {/* Server/Guild column (Discord-style) */}
         <Suspense fallback={
           <div className="w-16 flex flex-col items-center gap-3 py-3 bg-muted/5 border-r">
@@ -48,20 +48,22 @@ function RootLayout() {
         </Suspense>
 
         {guildId ? (
-          <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center">
-              Loading guild...
-            </div>
-          }>
-            <GuildPermissionWrapper guildId={guildId}>
-              {content}
-            </GuildPermissionWrapper>
-          </Suspense>
+          <ErrorBoundary resetKeys={[location.pathname]}>
+            <Suspense fallback={
+              <div className="flex-1 flex items-center justify-center">
+                Loading guild...
+              </div>
+            }>
+              <GuildPermissionWrapper guildId={guildId}>
+                {content}
+              </GuildPermissionWrapper>
+            </Suspense>
+          </ErrorBoundary>
         ) : (
           content
         )}
-      </div >
-    </ErrorBoundary>
+      </ErrorBoundary>
+    </div >
   );
 };
 
