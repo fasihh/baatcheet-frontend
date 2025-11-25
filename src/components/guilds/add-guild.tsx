@@ -14,37 +14,46 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export function AddGuild(): JSX.Element {
   const { token } = useUser();
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<'create' | 'join'>('create');
+  const [mode, setMode] = useState<'create' | 'join'>('join');
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const createGuild = useMutation({
     ...createGuildMutation(token!),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       qc.invalidateQueries({ queryKey: ["guilds"], refetchType: "active" });
       setOpen(false);
       resetForm();
+      navigate(`/guilds/${data.guildId}`);
+      toast.success("Guild created successfully");
     },
     onError: (err: any) => {
       setError(err?.message ?? "Failed to create guild");
+      toast.error(err?.message ?? "Failed to create guild");
     },
   });
 
   const joinGuild = useMutation({
     ...joinGuildMutation(token!),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       qc.invalidateQueries({ queryKey: ["guilds"], refetchType: "active" });
       setOpen(false);
       resetForm();
+      navigate(`/guilds/${data.guildId}`);
+      toast.success("Guild joined successfully");
     },
     onError: (err: any) => {
       setError(err?.message ?? "Failed to join guild");
+      toast.error(err?.message ?? "Failed to join guild");
     },
   });
 
