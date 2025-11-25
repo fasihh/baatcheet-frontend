@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,7 +8,12 @@ import { useUser } from '@/contexts/user';
 import { getChatByIdQuery, getMessagesByChatIdQuery } from '@/queries/chats';
 import { useSuspenseQuery } from '@tanstack/react-query';
 
-const ChatRoom: React.FC<{ chatId: string, guildId?: string }> = ({ chatId, guildId }) => {
+const ChatRoom: React.FC = () => {
+  const { guildId, chatId } = useParams();
+
+  if (!chatId)
+    return <Navigate to="/" />;
+
   const [text, setText] = React.useState('');
   const { getMessagesForChat, sendMessage, joinChat, leaveChat, clearMessagesForChat } = useSocket();
   const { token } = useUser();
@@ -134,13 +139,11 @@ const ChatRoom: React.FC<{ chatId: string, guildId?: string }> = ({ chatId, guil
 };
 
 function ChatPage() {
-  const { chatId, guildId } = useParams();
-
   return (
     <SocketProvider>
       <div className="flex flex-col h-full">
         <Suspense fallback={<div>Loading...</div>}>
-          <ChatRoom chatId={chatId!} guildId={guildId} />
+          <ChatRoom />
         </Suspense>
       </div>
     </SocketProvider>
