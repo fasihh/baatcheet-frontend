@@ -38,29 +38,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { usePermissions } from '@/contexts/permissions';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-
-const COLORS = [
-  { value: 'red', label: 'Red' },
-  { value: 'blue', label: 'Blue' },
-  { value: 'green', label: 'Green' },
-  { value: 'yellow', label: 'Yellow' },
-  { value: 'purple', label: 'Purple' },
-  { value: 'pink', label: 'Pink' },
-  { value: 'orange', label: 'Orange' },
-  { value: 'cyan', label: 'Cyan' },
-  { value: 'gray', label: 'Gray' },
-  { value: 'white', label: 'White' },
-];
-
-const PERMISSIONS = [
-  { key: 'can_manage_channels', label: 'Manage Channels' },
-  { key: 'can_manage_roles', label: 'Manage Roles' },
-  { key: 'can_manage_permissions', label: 'Manage Permissions' },
-  { key: 'can_kick_members', label: 'Kick Members' },
-  { key: 'can_ban_members', label: 'Ban Members' },
-  { key: 'can_message', label: 'Send Messages' },
-  { key: 'can_change_owner', label: 'Change Owner' },
-];
+import { COLORS, PERMISSIONS } from '@/constants';
 
 const AddRoleDialog: React.FC<{ guildId: string }> = ({ guildId }) => {
   const [open, setOpen] = useState(false);
