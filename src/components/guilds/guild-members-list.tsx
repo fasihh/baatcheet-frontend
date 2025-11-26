@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useUser } from '@/contexts/user';
-import { getGuildByIdQuery, getGuildMembersQuery, getRolesByMemberId, removeUserFromGuildMutation, getGuildRolesQuery, assignRoleToMemberMutation, removeRoleFromMemberMutation } from '@/queries/guilds';
+import { getGuildByIdQuery, getGuildMembersQuery, getRolesByMemberId, removeUserFromGuildMutation, getGuildRolesQuery, assignRoleToMemberMutation, removeRoleFromMemberMutation, banUserFromGuildMutation } from '@/queries/guilds';
 import { useMutation, useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
 import { Crown, Hammer, RefreshCcw, UserMinus, PlusIcon, Check } from 'lucide-react';
 import { Item } from '@/components/ui/item';
@@ -10,6 +10,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -66,6 +74,20 @@ const GuildMemberListItem: React.FC<{
       },
     });
 
+    const banUserFromGuild = useMutation({
+      ...banUserFromGuildMutation(token!),
+      onSuccess: () => {
+        onOpenChange(false);
+        qc.invalidateQueries({ queryKey: ['guilds', guildId, 'members'] });
+        qc.invalidateQueries({ queryKey: ['guilds', guildId, 'bans'] });
+        toast.success(`${member.username} has been banned from the guild`);
+      },
+      onError: (err: any) => {
+        console.error(err);
+        toast.error('Failed to ban user from guild');
+      },
+    });
+
     const assignRole = useMutation({
       ...assignRoleToMemberMutation(token!),
       onSuccess: () => {
@@ -104,7 +126,7 @@ const GuildMemberListItem: React.FC<{
     };
 
     const handleBan = () => {
-      removeUserFromGuild.mutate({ guildId, userId: member.userId });
+      banUserFromGuild.mutate({ guildId, userId: member.userId });
     };
 
     const handleToggleRole = (roleId: string, isAssigned: boolean) => {
@@ -259,13 +281,33 @@ export const GuildMembersList = ({ guildId }: { guildId: string }) => {
   const { data: guildData } = useSuspenseQuery({
     ...getGuildByIdQuery(token!, guildId)
   });
+  const { data: guildRolesData } = useSuspenseQuery({
+    ...getGuildRolesQuery(token!, guildId)
+  });
   const { permissions } = usePermissions();
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<RoleData | null>(null);
+  const [editRoleDialogOpen, setEditRoleDialogOpen] = useState(false);
 
   const canManageRoles = permissions.can_manage_roles?.allowed;
 
   const qc = useQueryClient();
-  const refreshMembers = () => qc.invalidateQueries({ queryKey: ['guilds', guildId, 'members'] });
+  const refreshMembers = () => {
+    qc.invalidateQueries({ queryKey: ['guilds', guildId, 'members'] });
+    qc.invalidateQueries({ queryKey: ['guilds', guildId, 'roles'] });
+  };
+
+  // Filter out Owner and Member roles from the list
+  const selectableRoles = guildRolesData.roles.filter((role: any) =>
+    role.roleName !== "Owner" && role.roleName !== "Member"
+  );
+
+  const handleRoleSelect = (role: any) => {
+    setSelectedRole(role);
+    setRoleDialogOpen(false);
+    setEditRoleDialogOpen(true);
+  };
 
   return (
     <div className="flex-1 flex flex-col">
@@ -280,7 +322,64 @@ export const GuildMembersList = ({ guildId }: { guildId: string }) => {
           >
             <RefreshCcw className="w-4 h-4" />
           </Button>
-          {canManageRoles && <AddRoleDialog guildId={guildId} />}
+          {canManageRoles && (
+            <>
+              <Dialog open={roleDialogOpen} onOpenChange={setRoleDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <PlusIcon className="w-4 h-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Manage Roles</DialogTitle>
+                    <DialogDescription>
+                      Select a role to edit or create a new one.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Command>
+                    <CommandInput placeholder="Search roles..." />
+                    <CommandList>
+                      <CommandEmpty>No roles found.</CommandEmpty>
+                      <CommandGroup>
+                        {selectableRoles.map((role: any) => (
+                          <CommandItem
+                            key={role.roleId}
+                            value={role.roleName}
+                            onSelect={() => handleRoleSelect(role)}
+                            className="cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="w-4 h-4 rounded-full"
+                                style={{ backgroundColor: role.color }}
+                              />
+                              {role.roleName}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                  <Separator />
+                  <div className="flex justify-end">
+                    <AddRoleDialog guildId={guildId} />
+                  </div>
+                </DialogContent>
+              </Dialog>
+              {selectedRole && (
+                <AddRoleDialog
+                  guildId={guildId}
+                  role={selectedRole}
+                  open={editRoleDialogOpen}
+                  onOpenChange={(open) => {
+                    setEditRoleDialogOpen(open);
+                    if (!open) setSelectedRole(null);
+                  }}
+                />
+              )}
+            </>
+          )}
         </div>
       </div>
       <ScrollArea className="flex-1">
