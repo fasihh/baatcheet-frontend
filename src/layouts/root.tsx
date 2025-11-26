@@ -3,15 +3,23 @@ import { FriendsChatPanel } from '@/components/friends/friends-chat-panel';
 import ErrorBoundary from '@/components/error-boundary';
 import { GuildsList } from '@/components/guilds/guilds-list';
 import { Suspense } from 'react';
-import { Outlet, useLocation, useParams } from 'react-router-dom';
+import { Outlet, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { GuildChatsPanel } from '@/components/guilds/guild-chats-panel';
 import { GuildPermissionWrapper } from '@/components/guilds/guild-permission-wrapper';
 import { UserProfile } from '@/components/user-profile';
+import { useUser } from '@/contexts/user';
 
 function RootLayout() {
   const location = useLocation();
   const { guildId } = useParams();
+  const navigate = useNavigate();
+  const { logout } = useUser();
   const isGuildRoute = !!guildId;
+
+  const handleAuthFailure = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
 
   const content = (
     <>
@@ -33,7 +41,7 @@ function RootLayout() {
 
   return (
     <div className="flex h-screen">
-      <ErrorBoundary resetKeys={[location.pathname]}>
+      <ErrorBoundary resetKeys={[location.pathname]} onAuthFailure={handleAuthFailure}>
         {/* Server/Guild column (Discord-style) */}
         <Suspense fallback={
           <div className="w-16 flex flex-col items-center gap-3 py-3 bg-muted/5 border-r">
@@ -48,7 +56,7 @@ function RootLayout() {
         </Suspense>
 
         {guildId ? (
-          <ErrorBoundary resetKeys={[location.pathname]}>
+          <ErrorBoundary resetKeys={[location.pathname]} onAuthFailure={handleAuthFailure}>
             <Suspense fallback={
               <div className="flex-1 flex items-center justify-center">
                 Loading guild...
