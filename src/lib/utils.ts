@@ -17,7 +17,7 @@ export function fetcher<T>(method: string, url: string, token?: string, options?
   }).then((res) => {
     if (!res.ok) {
       return res.json().then((data) => {
-        throw new Error(data.error?.info || 'An error occurred while fetching data');
+        throw new Error(data.error?.info || data.error?.message || 'An error occurred while fetching data');
       });
     }
     return res.json();
