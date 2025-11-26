@@ -7,6 +7,7 @@ import { SocketProvider, useSocket } from '@/contexts/socket';
 import { useUser } from '@/contexts/user';
 import { getChatByIdQuery, getMessagesByChatIdQuery } from '@/queries/chats';
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 const ChatRoom: React.FC = () => {
   const { guildId, chatId } = useParams();
@@ -21,11 +22,32 @@ const ChatRoom: React.FC = () => {
   const { data: chatData } = useSuspenseQuery(getChatByIdQuery(token!, chatId));
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && text.trim()) {
-      sendMessage(chatId, text, guildId);
+  const handleSendMessage = async () => {
+    if (!text.trim()) return;
+
+    try {
+      await sendMessage(chatId, text, guildId);
       setText('');
       scrollToBottom();
+    } catch (error: any) {
+      // Check if it's a toxic content error
+      if (error?.error === 'TOXIC_CONTENT' || error?.message?.includes('toxic')) {
+        toast.error(error?.message || 'Message contains toxic content and cannot be sent', {
+          description: error?.toxicityScore 
+            ? `Toxicity score: ${(error.toxicityScore * 100).toFixed(1)}%` 
+            : undefined,
+        });
+      } else {
+        // Generic error
+        toast.error(error?.message || 'Failed to send message');
+      }
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSendMessage();
     }
   };
 
@@ -122,15 +144,7 @@ const ChatRoom: React.FC = () => {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyPress}
         />
-        <Button
-          onClick={() => {
-            if (text.trim()) {
-              sendMessage(chatId, text, guildId);
-              setText('');
-              scrollToBottom();
-            }
-          }}
-        >
+        <Button onClick={handleSendMessage}>
           Send
         </Button>
       </div>

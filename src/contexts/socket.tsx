@@ -49,7 +49,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         : `${import.meta.env.VITE_SOCKET_URL}/api/messages`;
 
       try {
-        await fetch(url, {
+        const res = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -61,8 +61,14 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
             message
           })
         });
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw errorData;
+        }
+        return res.json();
       } catch (error) {
         console.error('Failed to send message:', error);
+        throw error;
       }
     }, [getTokenPayload]);
 
