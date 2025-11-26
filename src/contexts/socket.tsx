@@ -72,7 +72,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
   const joinChat = useCallback((chatId: string) => {
     if (socket) {
-      socket.emit("join:chat", chatId);
+      socket.emit("join:chat", JSON.stringify({ chatId, userId: getTokenPayload().userId }));
     }
   }, [socket]);
 
