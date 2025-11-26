@@ -7,6 +7,7 @@ interface Props {
   children: ReactNode;
   fallback?: ReactNode;
   resetKeys?: any[];
+  onAuthFailure?: () => void;
 }
 
 interface State {
@@ -34,16 +35,35 @@ class ErrorBoundary extends Component<Props, State> {
         this.setState({ hasError: false, error: null });
       }
     }
+
+    // Check for auth failure and call the callback
+    if (this.state.hasError &&
+      this.state.error?.message === "Auth failure" &&
+      this.props.onAuthFailure) {
+      this.props.onAuthFailure();
+      this.setState({ hasError: false, error: null });
+    }
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+
+    // Check for auth failure immediately
+    if (error.message === "Auth failure" && this.props.onAuthFailure) {
+      this.props.onAuthFailure();
+      this.setState({ hasError: false, error: null });
+    }
   }
 
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;
+      }
+
+      // Don't render anything if it's an auth failure - let the redirect happen
+      if (this.state.error?.message === "Auth failure") {
+        return null;
       }
 
       return (
