@@ -14,7 +14,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 export function AddGuild(): JSX.Element {
@@ -25,15 +24,13 @@ export function AddGuild(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const qc = useQueryClient();
-  const navigate = useNavigate();
 
   const createGuild = useMutation({
     ...createGuildMutation(token!),
-    onSuccess: (data: any) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["guilds"], refetchType: "active" });
       setOpen(false);
       resetForm();
-      navigate(`/guilds/${data.guildId}`);
       toast.success("Guild created successfully");
     },
     onError: (err: any) => {
@@ -44,11 +41,10 @@ export function AddGuild(): JSX.Element {
 
   const joinGuild = useMutation({
     ...joinGuildMutation(token!),
-    onSuccess: (data: any) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["guilds"], refetchType: "active" });
       setOpen(false);
       resetForm();
-      navigate(`/guilds/${data.guildId}`);
       toast.success("Guild joined successfully");
     },
     onError: (err: any) => {
