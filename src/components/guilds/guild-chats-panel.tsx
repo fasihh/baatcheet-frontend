@@ -3,7 +3,7 @@ import { Suspense, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { GuildChatsList } from "./guilds-chat-list";
 import { Button } from "@/components/ui/button";
-import { PlusIcon, ChevronDownIcon, ClipboardIcon, LogOutIcon, TrashIcon, EditIcon, UserCogIcon } from "lucide-react";
+import { PlusIcon, ChevronDownIcon, ClipboardIcon, LogOutIcon, TrashIcon, EditIcon, UserCogIcon, BanIcon } from "lucide-react";
 import { usePermissions } from "@/contexts/permissions";
 import {
 	Dialog,
@@ -31,6 +31,7 @@ import {
 	CommandItem,
 	CommandList,
 } from "@/components/ui/command";
+import { BannedMembersList } from "./banned-members-list";
 
 export const GuildChatsPanel = () => {
 	const { guildId } = useParams();
@@ -47,6 +48,7 @@ export const GuildChatsPanel = () => {
 	const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+	const [bannedMembersOpen, setBannedMembersOpen] = useState(false);
 	const [newGuildName, setNewGuildName] = useState("");
 	const [editError, setEditError] = useState<string | null>(null);
 	const [selectedNewOwner, setSelectedNewOwner] = useState<string>("");
@@ -169,8 +171,8 @@ export const GuildChatsPanel = () => {
 	};
 
 	const handleLeaveGuild = () => {
-		if (guildId && currentUserId) {
-			leaveGuild.mutate({ guildId, userId: currentUserId });
+		if (guildId) {
+			leaveGuild.mutate({ guildId });
 			setLeaveDialogOpen(false);
 			setPopoverOpen(false);
 		}
@@ -204,6 +206,7 @@ export const GuildChatsPanel = () => {
 	};
 
 	const canManageChannels = permissions.can_manage_channels?.allowed;
+	const canBanMembers = permissions.can_ban_members?.allowed;
 
 	// Filter out current owner from member list
 	const availableMembers = membersData.members.filter((m: any) => m.userId !== currentUserId);
@@ -281,6 +284,23 @@ export const GuildChatsPanel = () => {
 											</form>
 										</DialogContent>
 									</Dialog>
+								</>
+							)}
+
+							{(isOwner || canBanMembers) && (
+								<>
+									<Separator className="my-1" />
+									<Button
+										variant="ghost"
+										className="justify-start gap-2 w-full"
+										onClick={() => {
+											setBannedMembersOpen(true);
+											setPopoverOpen(false);
+										}}
+									>
+										<BanIcon className="w-4 h-4" />
+										Banned Members
+									</Button>
 								</>
 							)}
 
@@ -480,6 +500,14 @@ export const GuildChatsPanel = () => {
 					{guildId && <GuildChatsList guildId={guildId} />}
 				</Suspense>
 			</ScrollArea>
+
+			{canBanMembers && (
+				<BannedMembersList
+					guildId={guildId!}
+					open={bannedMembersOpen}
+					onOpenChange={setBannedMembersOpen}
+				/>
+			)}
 		</>
 	);
 }
