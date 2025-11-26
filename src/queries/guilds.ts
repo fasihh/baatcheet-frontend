@@ -55,11 +55,30 @@ export const removeUserFromGuildMutation = (token: string) => ({
   },
 } as UseMutationOptions<any, Error, { guildId: string, userId: string }>);
 
-export const leaveGuildMutation = (token: string) => ({
+export const banUserFromGuildMutation = (token: string) => ({
   mutationFn: ({ guildId, userId }: { guildId: string, userId: string }) => {
-    return fetcher("DELETE", `${import.meta.env.VITE_API_URL}/guilds/${guildId}/members/${userId}`, token);
+    return fetcher("POST", `${import.meta.env.VITE_API_URL}/guilds/${guildId}/members/${userId}/ban`, token);
   },
 } as UseMutationOptions<any, Error, { guildId: string, userId: string }>);
+
+export const unbanUserFromGuildMutation = (token: string) => ({
+  mutationFn: ({ guildId, userId }: { guildId: string, userId: string }) => {
+    return fetcher("POST", `${import.meta.env.VITE_API_URL}/guilds/${guildId}/members/${userId}/unban`, token);
+  },
+} as UseMutationOptions<any, Error, { guildId: string, userId: string }>);
+
+export const getAllBansQuery = (token: string, guildId: string) => ({
+  queryKey: ['guilds', guildId, 'bans'],
+  queryFn: async () => {
+    return fetcher("GET", `${import.meta.env.VITE_API_URL}/guilds/${guildId}/bans`, token);
+  },
+} as UseSuspenseQueryOptions<any, Error>);
+
+export const leaveGuildMutation = (token: string) => ({
+  mutationFn: ({ guildId }: { guildId: string }) => {
+    return fetcher("POST", `${import.meta.env.VITE_API_URL}/guilds/${guildId}/leave`, token);
+  },
+} as UseMutationOptions<any, Error, { guildId: string }>);
 
 export const deleteGuildMutation = (token: string) => ({
   mutationFn: ({ guildId }: { guildId: string }) => {
@@ -104,3 +123,21 @@ export const transferOwnershipMutation = (token: string) => ({
   },
 } as UseMutationOptions<any, Error, { guildId: string, newOwnerId: string }>);
 
+export const updateRoleMutation = (token: string) => ({
+  mutationFn: ({ guildId, roleId, roleName, color, permissions }: { guildId: string, roleId: string, roleName: string, color: string, permissions: string[] }) => {
+    return fetcher("PATCH", `${import.meta.env.VITE_API_URL}/guilds/${guildId}/roles/${roleId}`, token, { body: JSON.stringify({ roleName, color, permissions }) });
+  },
+} as UseMutationOptions<any, Error, { guildId: string, roleId: string, roleName: string, color: string, permissions: string[] }>);
+
+export const deleteRoleMutation = (token: string) => ({
+  mutationFn: ({ guildId, roleId }: { guildId: string, roleId: string }) => {
+    return fetcher("DELETE", `${import.meta.env.VITE_API_URL}/guilds/${guildId}/roles/${roleId}`, token);
+  },
+} as UseMutationOptions<any, Error, { guildId: string, roleId: string }>);
+
+export const getRolePermissionsQuery = (token: string, guildId: string, roleId: string) => ({
+  queryKey: ['guilds', guildId, 'roles', roleId, 'permissions'],
+  queryFn: async () => {
+    return fetcher("GET", `${import.meta.env.VITE_API_URL}/guilds/${guildId}/roles/${roleId}/permissions`, token);
+  },
+} as UseSuspenseQueryOptions<any, Error>);
